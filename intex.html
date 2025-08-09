@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Password Hunter</title>
+<!-- Favicon & PWA (chemins relatifs pour fonctionner en local ou sur GitHub Pages) -->
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<meta name="theme-color" content="#0b0f14">
+<!-- Fallback ICO -->
+<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+<style>
+  :root{
+    --bg:#0b0f14; --bg-2:#0d1320; --grid:#0f1a2b; --primary:#00ff88; --accent:#66e2ff; --warn:#ff7a7a; --ok:#a6ff00; --text:#dbe7ff; --muted:#8aa3c2;
+  }
+  html,body{height:100%}
+  body{margin:0; font-family: ui-sans-serif,system-ui,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial; color:var(--text); background:radial-gradient(1200px 800px at 20% -10%,#11223388,transparent),radial-gradient(1000px 800px at 120% 120%,#09201966,transparent),var(--bg); overflow-x:hidden; display:flex; flex-direction:column; min-height:100vh}
+  body:before{content:""; position:fixed; inset:0; pointer-events:none; opacity:.05; background:repeating-linear-gradient(to bottom,#000 0px,#000 1px,transparent 2px,transparent 4px)}
+  .grid{position:fixed; inset:0; background:linear-gradient(transparent 0 98%, #0c1727 0 100%),linear-gradient(90deg, transparent 0 98%, #0c1727 0 100%); background-size:38px 38px; opacity:.15; pointer-events:none}
+  .wrap{max-width:1100px;margin:0 auto;padding:18px}
+  .panel{background:linear-gradient(180deg,#0b1422cc,#0a111bcc); border:1px solid #11243d; border-radius:18px; padding:18px; box-shadow:0 40px 120px #0006, inset 0 0 0 1px #0b2138; position:relative; overflow:hidden}
+  .logo{display:flex;gap:12px;align-items:center;font-weight:700;letter-spacing:.2em;color:var(--primary)}
+  .logo .mark{width:14px;height:14px;border:2px solid var(--primary);box-shadow:0 0 8px var(--primary)}
+  .subtitle{color:var(--muted); font-size:13px; margin-top:6px}
+  .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
+  .btn{background:#0e1b2c; border:1px solid #183150; color:var(--text); padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:600}
+  .btn:hover{border-color:#285a83}
+  .btn.primary{background:linear-gradient(180deg,#0c2a20,#0a1f19); border-color:#1f5d4b; color:var(--primary); text-shadow:0 0 10px #00ff8866}
+  .btn.ghost{background:transparent; border-color:#21324b}
+  .seg{display:flex; gap:8px; background:#0e1726; border:1px solid #15233a; padding:6px; border-radius:14px}
+  .seg button{all:unset; padding:8px 12px; border-radius:10px; cursor:pointer; color:var(--muted)}
+  .seg button.active{background:linear-gradient(180deg,#0f2339,#0b1a2b); color:var(--accent); border:1px solid #20486b}
+  .columns{display:grid; grid-template-columns: 1.2fr .8fr; gap:16px}
+  @media (max-width:900px){.columns{grid-template-columns:1fr}}
+  .card{background:#0a1524; border:1px solid #132949; border-radius:16px; padding:16px; position:relative; overflow:hidden}
+  .card h3{margin:.2rem 0 .6rem; font-size:14px; letter-spacing:.12em; color:var(--accent); text-transform:uppercase}
+  .badge{background:#0b1626; border:1px solid #17355b; border-radius:999px; padding:8px 12px; color:var(--muted); font-size:13px}
+  .meta{display:flex; gap:10px; flex-wrap:wrap}
+  .facts{display:grid; gap:8px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); margin-top:10px}
+  .fact{background:#0c1b2f; border:1px solid #173054; padding:10px 12px; border-radius:10px; font-size:13px}
+  .hint{background:linear-gradient(180deg,#0f2035,#0c1a2b); border:1px dashed #1a3a61; color:#cfe7ff; padding:10px 12px; border-radius:10px; font-size:13px}
+  .hint.locked{filter:grayscale(1); opacity:.6}
+  .input{display:flex; gap:8px; align-items:center}
+  input[type="text"]{flex:1; background:#07101c; color:var(--text); border:1px solid #143052; border-radius:10px; padding:12px 12px; font-size:16px; outline:none}
+  input[type="text"]:focus{border-color:#1f6ba1; box-shadow:0 0 0 4px #1f6ba12a}
+  .kpi{display:flex; gap:14px; flex-wrap:wrap; font-size:13px; color:var(--muted)}
+  .timer{font-variant-numeric: tabular-nums; color:var(--accent)}
+  .score{color:var(--primary); font-variant-numeric: tabular-nums}
+  .strike{color:var(--warn)}
+  .progress{height:6px; background:#0b1b2e; border:1px solid #16365c; border-radius:999px; overflow:hidden}
+  .progress > i{display:block; height:100%; background:linear-gradient(90deg,#00ff88,#18d3a7,#66e2ff); width:0%}
+  .center{display:flex; justify-content:center; align-items:center}
+  .shake{animation:shake .5s linear}
+  @keyframes shake{0%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}100%{transform:translateX(0)}}
+  .pulse{animation:pulse 1.2s ease-out}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 #00ff8840}100%{box-shadow:0 0 0 35px #00ff8800}}
+  .floatLoss{position:absolute; pointer-events:none; color:var(--warn); font-weight:700; text-shadow:0 0 8px #ff7a7a88; animation:fly 900ms ease-out forwards}
+  @keyframes fly{from{opacity:1; transform:translateY(0)} to{opacity:0; transform:translateY(-28px)}}
+  .glitch{position:relative}
+  .glitch:after,.glitch:before{content:attr(data-text); position:absolute; left:0; top:0; width:100%; overflow:hidden; clip-path: inset(0 0 0 0)}
+  .glitch:before{left:1px; text-shadow:-1px 0 #0ff; animation:gl1 1.2s infinite linear alternate-reverse}
+  .glitch:after{left:-1px; text-shadow:1px 0 #f0f; animation:gl2 1.3s infinite linear alternate}
+  @keyframes gl1{from{clip-path: inset(0 0 90% 0)} to{clip-path: inset(80% 0 0 0)}}
+  @keyframes gl2{from{clip-path: inset(80% 0 0 0)} to{clip-path: inset(0 0 90% 0)}}
+  /* --- Landing refinements --- */
+  #screenIntro{position:relative; overflow:hidden;}
+  #screenIntro:before,#screenIntro:after{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;}
+  #screenIntro:before{background:radial-gradient(circle at 80% 20%,#00ff8822,transparent 60%),radial-gradient(circle at 10% 90%,#66e2ff22,transparent 55%);}    
+  #screenIntro:after{background:repeating-linear-gradient(45deg,#0c182855 0 2px,transparent 2px 6px);opacity:.25;mask:linear-gradient(to bottom,transparent, #000 30% 70%, transparent);}  
+  .hero{display:flex;flex-direction:column;gap:20px;margin-top:8px;padding:6px 4px 28px;}
+  .hero h1{margin:0;font-size:clamp(1.9rem,4vw,3rem);line-height:1.05;letter-spacing:.05em;background:linear-gradient(90deg,#00ff88,#66e2ff 60%,#a6ff00);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 14px #00ff8855);}  
+  .tagline{max-width:760px;font-size:1.05rem;line-height:1.5;color:var(--muted);} 
+  .tagline b{color:var(--accent);} 
+  .modesWrap{display:grid;gap:28px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));margin-top:10px}
+  .modeCard{background:#0d1929; border:1px solid #162b45; padding:16px 18px; border-radius:18px; position:relative; overflow:hidden;}
+  .modeCard h4{margin:0 0 6px; font-size:13px; letter-spacing:.15em; text-transform:uppercase; color:var(--accent);}
+  .modeCard p{margin:0; font-size:13px; line-height:1.45; color:var(--muted);}  
+  .seg{background:#0f1d2f; border-color:#1c324d; padding:8px 10px;} /* override spacing */
+  .seg button{font-size:13px; font-weight:500; letter-spacing:.04em; padding:10px 16px; position:relative;}
+  .seg button.active{box-shadow:0 0 0 1px #20486b, 0 0 12px -2px #1d4c72 inset;} 
+  .controlsGrid{display:flex;flex-direction:column;gap:18px;margin-top:8px}
+  /* Chaque élément (Mode, Difficulté, Options) sur sa propre ligne */
+  .controlBlock{display:grid;grid-template-columns:1fr;row-gap:12px;align-items:center;justify-items:start}
+  /* Ne pas étirer les segments : conserver la largeur au contenu */
+  .controlBlock .seg{justify-self:start;width:fit-content}
+  .controlBlock .bigCTA{grid-column:1 / -1}
+  .pillNote{background:#0e2337;border:1px solid #173a5c;padding:6px 12px;border-radius:999px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);}
+  .features{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:30px}
+  .feature{background:#0d1b2b; border:1px solid #16314f; padding:12px 14px; border-radius:14px; font-size:12px; line-height:1.4; position:relative;}
+  .feature:before{content:""; position:absolute; inset:0; background:linear-gradient(120deg,#00ff880c,#66e2ff08); border-radius:inherit; pointer-events:none;}
+  .feature b{display:block;color:var(--primary); font-size:11px; letter-spacing:.14em; text-transform:uppercase; margin-bottom:4px;}
+  .bigCTA{display:flex;align-items:center;gap:14px;margin-top:20px;flex-wrap:wrap}
+  #btnStart{font-size:15px;padding:14px 26px;letter-spacing:.12em;}
+  /* scoreLine removed */
+  @media (max-width:720px){ .hero h1{font-size:2.1rem} .tagline{font-size:.95rem} }
+  /* --- In‑game presentation improvements --- */
+  #screenGame .columns{gap:26px}
+  #cardProfile, #cardAction{background:linear-gradient(180deg,#0c1624,#0a131f); border:1px solid #163248;}
+  #cardProfile{position:relative;}
+  #cardProfile:before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(#00ff88,#66e2ff); border-radius:4px 0 0 4px; opacity:.85}
+  #meta{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px}
+  #meta .badge{background:#0d2437; border-color:#1d4060;}
+  #bio{margin:4px 0 0; font-size:14px; line-height:1.5; font-weight:400; letter-spacing:.2px}
+  .bioPara{margin:0 0 14px}
+  .bioPara:last-child{margin-bottom:4px}
+  .bioPara .sentence{display:block; position:relative; padding-left:10px;}
+  .bioPara .sentence:before{content:"•"; position:absolute; left:0; color:#00ff8866; font-size:12px; line-height:1.2; top:0}
+  .facts{margin-top:14px}
+  #facts .fact{background:#0d2438; border-color:#194869}
+  #btnFacts{margin-top:6px}
+  #hints{flex-direction:column; align-items:stretch; width:100%; gap:6px}
+  #hints .hint{background:#11273d; border:1px dashed #225074;}
+  #hints .hint.locked{filter:none; opacity:.55; background:#0c1e30}
+  #guess{letter-spacing:.5px}
+  #feedback{font-size:14px; font-weight:600}
+  .badge{backdrop-filter:blur(3px)}
+  /* End screen */
+  .endStats{display:flex;flex-direction:column;gap:26px;}
+  .kpiBlock{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px}
+  .kpiBlock div{background:#0d1d2b;border:1px solid #16344c;padding:12px 14px;border-radius:14px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+  .kpiBlock strong{font-size:20px;line-height:1;color:var(--primary);font-weight:600}
+  .kpiBlock span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .tableWrap{overflow:auto;border:1px solid #16344c;border-radius:16px;background:#0b1623}
+  table.summary{border-collapse:collapse;width:100%;font-size:12px;min-width:620px}
+  table.summary th,table.summary td{padding:8px 10px;text-align:left;border-bottom:1px solid #123049}
+  table.summary th{background:#0e2133;font-weight:600;letter-spacing:.1em;font-size:11px;color:var(--accent);text-transform:uppercase}
+  table.summary tbody tr:last-child td{border-bottom:none}
+  table.summary tbody tr:hover{background:#102437}
+  .awareness{margin:4px 0 26px; background:#101f2d; border:1px solid #17374f; padding:18px 20px; border-radius:18px; position:relative;}
+  .awareness h3{margin:0 0 10px; font-size:17px; letter-spacing:.5px; color:#ffb347; text-shadow:0 0 10px #ffb34733}
+  .awareness p{margin:0 0 12px; font-size:13.5px; line-height:1.55; color:var(--text);}
+  .awareness ul{margin:0 0 14px 0; padding:0 0 0 18px; font-size:13.2px; line-height:1.5}
+  .awareness li{margin:4px 0}
+  .awareness code{background:#132b42; padding:2px 6px; border-radius:6px; font-size:12px; color:var(--accent)}
+  .pwExample{margin:0 0 14px; padding:10px 14px; background:#0d2536; border:1px solid #1d4660; border-radius:12px; font-family:ui-monospace,monospace; font-size:13px; letter-spacing:.5px; overflow:auto}
+  .sectionLabel{margin:6px 0 6px; font-size:13px; letter-spacing:.14em; text-transform:uppercase; font-weight:600; color:var(--accent); opacity:.9}
+  .sectionLabel + .features{margin-top:12px}
+  /* Sticky footer */
+  main{flex:1 0 auto}
+  .footer{margin-top:auto; background:linear-gradient(180deg,#0a1523,#08111b); border-top:1px solid #11243d; position:relative; z-index:1}
+  .footer .inner{max-width:1100px;margin:0 auto;padding:12px 18px;display:flex;gap:12px;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted)}
+  .footer .links{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .footer a{color:var(--accent); text-decoration:none}
+  .footer a:hover{text-decoration:underline}
+  .footer a.gh-link{color:#fff}
+  .footer a.gh-link:hover{color:#eaeef2}
+  .footer a.gh-link svg{width:18px;height:18px;vertical-align:-3px;margin-right:6px;fill:currentColor}
+</style>
+</head>
+<body>
+<div class="grid"></div>
+<header class="wrap">
+  <div class="logo"><div class="mark"></div><div class="glitch" data-text="PASSWORD HUNTER">PASSWORD HUNTER</div></div>
+  <div class="subtitle">Devine le mot de passe à partir d'une fiche… sans te perdre dans les fausses pistes. <span style="opacity:.7">#StayParanoid</span></div>
+</header>
+
+<main class="wrap">
+  <section class="panel" id="screenIntro">
+    <div class="hero">
+      <div class="pillNote">v1 prototype</div>
+      <h1>Décrypte leurs vies. Devine leurs <span style="white-space:nowrap">mots&nbsp;de&nbsp;passe</span>.</h1>
+  <p class="tagline">Lis une fiche (profil + traces publiques + indices cryptiques) puis <b>déduis le mot de passe</b>. Chaque seconde te coûte des points : après 10 minutes, <b>il ne reste rien</b>. Utilise les indices… mais ils amputent ton score. Cherche l’équilibre vitesse / deduction.</p>
+  <div class="sectionLabel" title="Règles de scoring utilisées pendant la partie">Le système de points</div>
+  <div class="features">
+        <div class="feature"><b>DRain temps</b>Score fond à zéro en 600s (–1.666 pt/sec).</div>
+        <div class="feature"><b>Indices</b>3 paliers coûteux : –100 / –150 / –200.</div>
+        <div class="feature"><b>Mode Pendu</b>Retourne le nombre de caractères corrects.</div>
+        <div class="feature"><b>Facts OSINT</b>Données publiques optionnelles (–50) révélables.</div>
+        <div class="feature"><b>Campagne</b>5 fiches enchaînées au hasard pour le high‑score.</div>
+        <div class="feature"><b>Bonus Speed</b><30s +100 pts, ≤60s +50 pts si réussi.</div>
+      </div>
+      <div class="controlsGrid">
+        <div class="controlBlock">
+          <div class="sectionLabel">Mode</div>
+          <div class="seg" id="modeSeg">
+            <button data-mode="express" class="active" title="Une seule fiche à deviner">Partie express</button>
+            <button data-mode="campagne" title="Suite de 5 fiches aléatoires avec score cumulé">Campagne (5)</button>
+          </div>
+          <div class="sectionLabel">Difficulté</div>
+          <div class="seg" id="diffSeg">
+            <button data-diff="Facile" class="active" title="Mot de passe simple (souvent prénom + année)">Facile</button>
+            <button data-diff="Moyen" title="Mot comprenant un séparateur ou un symbole léger">Moyen</button>
+            <button data-diff="Difficile" title="Combinaisons moins évidentes : plusieurs majuscules / symboles">Difficile</button>
+          </div>
+          <div class="sectionLabel">Options</div>
+          <div class="seg" id="optsSeg">
+            <button data-opt="pendu" aria-pressed="false" title="Affiche le nombre de caractères présents dans la solution">Mode du pendu</button>
+            <button data-opt="facts" aria-pressed="false" title="Affiche toutes les 'facts' publiques (coût 50 pts)">Afficher les faits (–50)</button>
+          </div>
+          <div class="bigCTA"><button class="btn primary" id="btnStart" title="Lancer la partie avec les réglages ci-dessus">START</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="screenGame" style="display:none">
+    <div class="row" style="justify-content:space-between; align-items:center">
+      <div class="row">
+        <div class="badge">Fiche <span id="kFiche">1</span>/<span id="kFicheMax">1</span></div>
+        <div class="badge">Temps <span class="timer" id="kTime">00:00</span></div>
+        <div class="badge">Essais <span class="strike" id="kTries">0</span></div>
+        <div class="badge">Fiche pts <span class="score" id="kFicheScore">1000</span></div>
+        <div class="badge">Total <span class="score" id="kScore">0</span></div>
+      </div>
+      <div class="row"><button class="btn ghost" id="btnAbandon">Abandonner la fiche</button></div>
+    </div>
+    <div class="progress" style="margin:14px 0 8px"><i id="prog"></i></div>
+
+    <div class="columns" id="game">
+      <div class="card" id="cardProfile">
+        <h3>Profil</h3>
+        <div class="meta" id="meta"></div>
+        <p id="bio" style="margin:10px 0 0"></p>
+        <div class="row" style="margin-top:8px"><button class="btn" id="btnFacts">Afficher les faits (–50)</button></div>
+        <div class="facts" id="facts" style="display:none"></div>
+      </div>
+
+      <div class="card" id="cardAction">
+        <h3>Déduction</h3>
+        <div class="row" style="margin-bottom:8px">
+          <button class="btn" id="btnHint1">Indice 1 (–100)</button>
+          <button class="btn" id="btnHint2">Indice 2 (–150)</button>
+          <button class="btn" id="btnHint3">Indice 3 (–200)</button>
+        </div>
+        <div class="row" id="hints"></div>
+        <div class="row" style="margin-top:12px">
+          <div class="input" style="width:100%">
+            <input id="guess" type="text" placeholder="Entrer le mot de passe supposé…"/>
+            <button class="btn primary" id="btnSubmit">Valider</button>
+          </div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <small class="muted">Astuce : la casse et les caractères spéciaux comptent. <span id="penduInfo" style="display:none">Mode du pendu activé.</span></small>
+        </div>
+        <div id="feedback" style="min-height:28px; margin-top:8px"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="inner">
+    <div>Auteur&nbsp;: <strong>SingeQuantique</strong></div>
+    <div class="links">
+      <a href="https://singequantique.jateroka.fr" target="_blank" rel="noopener" title="Site de l'auteur">singequantique.jateroka.fr</a>
+      <a class="gh-link" href="https://github.com/ZA512" target="_blank" rel="noopener" title="GitHub ZA512">
+        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path>
+        </svg>
+        
+      </a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// === DATA ===
+const GAME_DATA = {
+  fiches: [
+  {
+    "id": "U001",
+    "profile": {
+      "name": "Marc Duval",
+      "age": 38,
+      "city": "Nantes",
+      "job": "Responsable logistique",
+      "bio": "Marc adore les voyages et documente chaque escapade sur Instagram. Dans ses stories reviennent souvent des chaussures de randonnée encore boueuses et un sourire jusqu’aux oreilles quand il évoque sa montée au Mont‑Blanc en 2018.\n\nGrand fan du FC Nantes, il parle du but de Patrice Loko en 1995 comme d’un rite initiatique. Le match d’alors est devenu son mètre étalon du ‘frisson stade’.\n\nIl vit avec Sophie et leur chien ‘Pixel’, un border qui photobombe toutes les photos de couple. Leur anniversaire tombe le 14 février — Marc en plaisante en disant qu’il ne sait jamais si la table est pour eux ou pour une armée de Valentin.\n\nCôté bricolage, il a remis en route une vieille Vespa bleue héritée de son grand‑père. Postée fièrement, la photo du bureau où l’on devine un post‑it ‘MDV’ montre surtout qu’il a le sens du détail… mais une drôle de conception de l’opsec.\n\nEnfant, il rêvait de cockpit et d’altimètres. Aujourd’hui, il carbure au café latte, fuit les olives noires et prétend que ‘logistique’ rime avec ‘gymnastique’ quand il jongle avec les palettes et les délais.",
+      "facts": [
+        "Randonnée au Mont-Blanc en 2018",
+        "Fan du FC Nantes (souvenir de 1995)",
+        "Chien nommé Pixel",
+        "Anniversaire de couple le 14 février",
+        "Post-it 'MDV' visible sur une photo de bureau",
+        "Déteste les olives noires",
+        "Boisson préférée: café latte",
+        "Rêvait d'être pilote d'avion"
+      ]
+    },
+    "passwords": {
+      "Facile": { "value": "Pixel2018", "hints": ["Poil", "Altitude", "1 majuscule et des chiffres"] },
+      "Moyen":  { "value": "Loko95!",   "hints": ["Sphère", "Famille", "1 majuscule, (quoi il y a un caractère spécial?!!)"] },
+      "Difficile": { "value": "MDV_Vespa14", "hints": ["Carré jaune", "Vintage + Anneaux", "4 majuscules, 1 caractère spécialement bas, 2 chiffres"] }
+    }
+  },
+  {
+    "id": "U002",
+    "profile": {
+      "name": "Aïcha Benali",
+      "age": 29,
+      "city": "Lyon",
+      "job": "Cheffe de projet marketing digital",
+      "bio": "Le dimanche, Aïcha transforme sa cuisine en laboratoire de pâtisserie : macarons alignés au millimètre, stories en gros plan, et verdict des voisins comme focus group improvisé. Son chat tigré, ‘Nougat’, s’invite souvent dans le cadre — influenceur malgré lui.\n\nChaque printemps, elle épingle sur son profil le dossard de son semi‑marathon de Lyon. La première médaille date de 2021, et depuis, elle collectionne autant les kilomètres que les playlists d’Angèle.\n\nCôté convictions, elle parle zéro déchet avec douceur mais ténacité, emoji 🌱 à l’appui. Dans son sac réutilisable brodé ‘AB’, on trouve un mug vintage chiné et un carnet couvert d’idées de campagnes.\n\nElle souffle ses bougies le 3 mars, et prétend – juré – que la pistache améliore la conversion des macarons comme des landing pages.",
+      "facts": [
+        "Premier semi-marathon en 2021",
+        "Chat nommé Nougat",
+        "Passion macarons pistache",
+        "Utilise souvent l'emoji 🌱",
+        "Anniversaire: 3 mars",
+        "Sacs réutilisables personnalisés 'AB'",
+        "Fan de la chanteuse Angèle",
+        "Collectionne des tasses vintage"
+      ]
+    },
+    "passwords": {
+      "Facile": { "value": "Nougat2021", "hints": ["Moustaches", "Course longue", "1 majuscule et des chiffres"] },
+      "Moyen":  { "value": "Macaron_3",  "hints": ["Sucré", "Petite unité", "1 majuscule, underscore et un chiffre"] },
+      "Difficile": { "value": "ZeroDechet🌱", "hints": ["Absence", "Feuillage", "2 majuscules, 1 caractère spécial graphique"] }
+    }
+  },
+  {
+    "id": "U003",
+    "profile": {
+      "name": "Hugo Pereira",
+      "age": 34,
+      "city": "Bordeaux",
+      "job": "Développeur backend",
+      "bio": "Hugo collectionne les claviers mécaniques comme d’autres les vinyles. Il peut disserter vingt minutes sur des switchs bleus pendant qu’un V60 goutte au ralenti à côté de son écran.\n\nLe soir, il recharge ses batteries en rejouant des classiques sur une console rétro qu’il a modifiée lui‑même. Son poisson rouge s’appelle ‘RAM’ — ‘parce qu’il oublie tout, c’est ironique’, dit‑il.\n\nIl a remporté un hackathon en 2019, l’année où son pseudo ‘BitBdx’ a cessé d’être juste un handle pour devenir une mini‑marque. Le 11 novembre, il coupe tout : un café, un JRPG, et au lit.",
+      "facts": [
+        "Poisson rouge nommé RAM",
+        "Hackathon gagné en 2019",
+        "Claviers mécaniques switchs bleus",
+        "Aime le café filtre V60",
+        "Console rétro modifiée",
+        "Anniversaire le 11 novembre",
+        "Pseudo en ligne: BitBdx",
+        "Fan de Chrono Trigger"
+      ]
+    },
+    "passwords": {
+      "Facile": { "value": "RAM2019", "hints": ["Bocal", "Victoire", "1 majuscule et des chiffres"] },
+      "Moyen":  { "value": "BitBdx_11", "hints": ["Pixel", "Identique", "2 majuscules, underscore et des chiffres"] },
+      "Difficile": { "value": "V60Trigger!", "hints": ["Filtre", "Voyage temporel", "2 majuscules, 1 caractère spécial"] }
+    }
+  },
+  {
+    "id": "U004",
+    "profile": {
+      "name": "Claire Martin",
+      "age": 41,
+      "city": "Rennes",
+      "job": "Comptable",
+      "bio": "Claire parle à ses dahlias comme d’autres à leurs collègues. Chaque été, son jardin en carrés devient un patchwork de couleurs, surveillé par Oslo, le chien qui confond arrosage et séance de jeu.\n\nLe dimanche, elle chine dans les brocantes, toujours à la recherche d’un pot en vert sauge ‘exactement comme celui de sa grand‑mère’. Mariée depuis 2012, elle alterne naturellement entre tableaux Excel et terreau, et avoue un faible pour les polars nordiques aux titres imprononçables.\n\nLes prénoms de Léo et Manon reviennent souvent quand elle raconte ses victoires de jardinière… et ses défaites face aux limaces.",
+      "facts": [
+        "Chien Oslo",
+        "Enfants: Léo et Manon",
+        "Dahlias en été",
+        "Potager en carré",
+        "Mariage en 2012",
+        "Fan de brocante le dimanche",
+        "Couleur préférée: vert sauge",
+        "Aime les romans policiers nordiques"
+      ]
+    },
+    "passwords": {
+      "Facile": { "value": "Oslo2012", "hints": ["Nord", "Alliance", "1 majuscule et des chiffres"] },
+      "Moyen":  { "value": "Dahlia_Sage", "hints": ["Pétales", "Verdure", "2 majuscules, underscore, sans chiffres"] },
+      "Difficile": { "value": "LeoManon#41", "hints": ["Fratrie", "Dièse", "2 majuscules, # et des chiffres"] }
+    }
+  },
+  {
+    "id": "U005",
+    "profile": {
+      "name": "Yanis Khedira",
+      "age": 26,
+      "city": "Toulouse",
+      "job": "Technicien support",
+      "bio": "À Blagnac, Yanis connaît les heures où les carlingues semblent flotter au ralenti. Il photographie les avions comme d’autres des couchers de soleil. Son scooter ‘Raptor’ n’a pas tout à fait l’âme d’un chasseur, mais il rugit assez pour faire sourire les passants.\n\nEn ligne, on le croise sous ‘SkyYk’ à streamer des parties de Rocket League, casque vissé, commentaires auto‑dérisoires compris. Son BTS en poche depuis 2020, il garde un faible pour les mangas mecha et les baskets rouges trop voyantes qu’il assume pleinement.",
+      "facts": [
+        "Spotter avion à Blagnac",
+        "Scooter nommé Raptor",
+        "Pseudo SkyYk",
+        "Rocket League joueur Platine",
+        "Diplôme BTS 2020",
+        "Boisson préférée: Ice tea",
+        "Aime les mangas mecha",
+        "Chaussures rouges favorites"
+      ]
+    },
+    "passwords": {
+      "Facile": { "value": "Raptor2020", "hints": ["Prédateur", "Deux-roues", "1 majuscule et des chiffres"] },
+      "Moyen":  { "value": "SkyYk-26",   "hints": ["Ciel", "Trait d'union", "2 majuscules, -, des chiffres"] },
+      "Difficile": { "value": "BlagnacATC!", "hints": ["Piste", "Tours de contrôle", "Majuscules internes et !, sans chiffres"] }
+    }
+  },
+  {
+    "id": "U006",
+    "profile": {
+      "name": "Sophie Caron",
+      "age": 45,
+      "city": "Paris",
+      "job": "DRH",
+      "bio": "Sophie a deux religions : le yoga du matin et le thé au calme. Son chat ‘Sésame’ a compris que le tapis n’est pas pour lui, mais teste encore la théorie chaque dimanche.\n\nElle lit des essais de sociologie en griffonnant des idées pour le prochain atelier RH. Son balcon déborde de lavande dont elle connaît toutes les variétés. En 2017, un prix interne a atterri sur son bureau — elle jure que c’est l’équipe, pas la posture du guerrier II, qui l’a mérité.\n\nNée un 29 août, elle hésite toujours entre podcasts et épisodes de ‘The Crown’, confortablement installée sur une chaise Eames qu’elle traite comme un trésor.",
+      "facts": [
+        "Chat Sésame",
+        "Yoga depuis 10 ans",
+        "Prix RH 2017",
+        "Lavande sur balcon",
+        "Anniversaire le 29 août",
+        "Fan de podcasts",
+        "Regarde 'The Crown'",
+        "Chaise design Eames préférée"
+      ]
+    },
+    "passwords": {
+      "Facile": { "value": "Sesame2017", "hints": ["Graines", "Ouverture", "1 majuscule et des chiffres"] },
+      "Moyen":  { "value": "Lavande29",  "hints": ["Provence", "Balcon", "1 majuscule et des chiffres, sans spécial"] },
+      "Difficile": { "value": "Yoga&Eames", "hints": ["Souplesse", "Design", "2 majuscules, &, sans chiffres"] }
+    }
+  },
+  {
+    "id": "U007",
+    "profile": {
+      "name": "Thomas Leroy",
+      "age": 51,
+      "city": "Lille",
+      "job": "Chef d'atelier",
+      "bio": "Thomas restaure des motos anciennes avec la patience d’un horloger. Il participe à des rallyes amateurs où la poussière s’accroche aux sourires autant qu’aux combinaisons.\n\nChez lui, une petite collection de montres soviétiques raconte l’heure à sa manière. Son perroquet ‘Kirov’ répète parfois le bruit du démarreur — une blague qu’il n’admettra jamais avoir enseignée.\n\nEn 2004, une mauvaise chute l’a tenu éloigné des circuits quelque temps. Aujourd’hui, il garde la nostalgie d’une Jawa 350 et des routes de Géorgie traversées en 2019.",
+      "facts": [
+        "Perroquet Kirov",
+        "Montres soviétiques Vostok",
+        "Accident en 2004",
+        "Rallyes amateurs",
+        "Anniversaire le 7 janvier",
+        "Moto Jawa 350",
+        "Aime le chou-fleur rôti",
+        "Voyage en Géorgie en 2019"
+      ]
+    },
+    "passwords": {
+      "Facile": { "value": "Kirov2004", "hints": ["Perroquet", "Est", "1 majuscule et des chiffres"] },
+      "Moyen":  { "value": "Vostok_07", "hints": ["Horlogerie", "Orient", "1 majuscule, underscore et des chiffres"] },
+      "Difficile": { "value": "Jawa350!Rally", "hints": ["Vintage moteur", "Poussière", "Majuscules internes, des chiffres et !"] }
+    }
+  },
+  {
+    "id": "U008",
+    "profile": {
+      "name": "Nina Dubois",
+      "age": 32,
+      "city": "Strasbourg",
+      "job": "Illustratrice",
+      "bio": "Nina dessine des chats avec la même application que d’autres écrivent des mails. Sur Etsy, ses stickers font ronronner les paniers. Son vélo hollandais jaune, ‘Tulipe’, attire autant de regards que ses carnets d’aquarelle.\n\nChaque hiver, elle prépare Angoulême comme d’autres une rentrée des classes : trousse neuve, carnets vides, et un tote bag qui ne l’est jamais longtemps. En 2022, un prix local l’a surprise — ‘c’était un mardi’, dit‑elle, comme si c’était l’élément le plus drôle de l’histoire.\n\nLe 17 mai, elle souffle ses bougies en débattant houmous maison vs. du traiteur, casque rose sur les oreilles pour la bande‑son.",
+      "facts": [
+        "Vélo 'Tulipe' jaune",
+        "Prix local 2022",
+        "Stickers chats Etsy",
+        "Fan d'Angoulême",
+        "Anniversaire 17 mai",
+        "Aime le houmous",
+        "Regarde des streams d'aquarelle",
+        "Casque audio rose"
+      ]
+    },
+    "passwords": {
+      "Facile": { "value": "Tulipe2022", "hints": ["Guidon", "Jaune", "1 majuscule et des chiffres"] },
+      "Moyen":  { "value": "StickerChat17", "hints": ["Autocollant", "Félin", "2 majuscules et des chiffres, sans spécial"] },
+      "Difficile": { "value": "Angouleme_BD", "hints": ["Bulles", "Festival", "Majuscules mixtes, underscore, sans chiffres"] }
+    }
+  },
+  {
+    "id": "U009",
+    "profile": {
+      "name": "Mahdi El-Far",
+      "age": 37,
+      "city": "Marseille",
+      "job": "Infirmier",
+      "bio": "Mahdi court sur la Corniche au lever du soleil, quand la ville baille encore. Il dit que l’air salé aide à remettre les idées en place.\n\nSupporter de l’OM depuis l’enfance, il collectionne les maillots comme d’autres les timbres, sans jamais avouer combien il en a. Son fils Adam grimpe déjà sur les gradins avec lui.\n\nSon oncle a un bateau nommé ‘Alizé’, prétexte idéal à des pique‑niques qui s’étirent. Le 6 juin, Mahdi fête son anniversaire de préférence avec bouillabaisse et casquette blanche.",
+      "facts": [
+        "Fils Adam",
+        "OM supporter",
+        "Bateau 'Alizé' dans la famille",
+        "Jogging matinal Corniche",
+        "Anniversaire 6 juin",
+        "Aime la bouillabaisse",
+        "Regarde des documentaires nature",
+        "Casquette blanche fétiche"
+      ]
+    },
+    "passwords": {
+      "Facile": { "value": "Adam2016", "hints": ["Famille", "Premier pas", "1 majuscule et des chiffres"] },
+      "Moyen":  { "value": "OMAlize#6", "hints": ["Virage", "Alizé", "2 majuscules, # et un chiffre"] },
+      "Difficile": { "value": "CornicheAube!", "hints": ["Horizon", "Premières lueurs", "Majuscules internes et !, sans chiffres"] }
+    }
+  },
+  {
+    "id": "U010",
+    "profile": {
+      "name": "Élodie Garnier",
+      "age": 47,
+      "city": "Dijon",
+      "job": "Professeure de SVT",
+      "bio": "Le week‑end, Élodie troque la blouse contre des bottes et s’enfonce dans les sous‑bois. Elle connaît les champignons par le nom, la saison et ‘le bruit qu’ils font quand on les cueille’.\n\nSa Dacia Sandero verte, surnommée ‘Pistache’, a déjà servi de stand pour un mini concours photo qu’elle a remporté en 2015. Le 22 septembre, elle souffle ses bougies entourée de succulentes parfaitement alignées.\n\nÀ la maison, le chat ‘Mousse’ a un don pour s’asseoir sur les pages des livres. L’axolotl est devenu sa mascotte de classe officieuse — ‘parce qu’il sourit, lui’.",
+      "facts": [
+        "Sorties mycologie",
+        "Voiture surnommée Pistache",
+        "Concours photo 2015",
+        "Anniversaire 22 septembre",
+        "Chat 'Mousse'",
+        "Fan d'Axolotls",
+        "Jardin de succulentes",
+        "Boit du thé au jasmin"
+      ]
+    },
+    "passwords": {
+      "Facile": { "value": "Pistache2015", "hints": ["Carrosserie", "Vert", "1 majuscule et des chiffres"] },
+      "Moyen":  { "value": "Mousse22",     "hints": ["Forêt", "Ronron", "1 majuscule et des chiffres, sans spécial"] },
+      "Difficile": { "value": "Myco_Axolotl", "hints": ["Spores", "Branchies", "1 majuscule, underscore, sans chiffres"] }
+    }
+  }
+]
+
+};
+
+// === STATE ===
+const state = {
+  mode: 'express', diff: 'Facile', pendu:false, factsOn:false,
+  queue: [], index:0,
+  totalScore:0, ficheBase:1000, ficheScore:1000,
+  tries:0, revealed:[false,false,false],
+  startTime:0, timerId:null,
+  drainPerSec: 1000/600, // 10 minutes -> 0,
+  runStats:[],
+  factsShown:false,
+};
+
+// === RULES ===
+const RULES = { hintCost:[100,150,200], wrongCost:20, factsCost:50, bonusSpeed:(t)=> t<30?100:(t<=60?50:0), campaignSize:5 };
+
+// === HELPERS ===
+const $ = s=>document.querySelector(s); const el=(t,c,txt)=>{const n=document.createElement(t); if(c) n.className=c; if(txt!=null) n.textContent=txt; return n}; const pad=n=>String(n).padStart(2,'0');
+function flyLoss(amount, anchor){ const b = anchor||document.body; const s = el('div','floatLoss',`-${amount}`); const r = b.getBoundingClientRect(); s.style.left=(r.right-90)+'px'; s.style.top=(r.top+8)+'px'; document.body.appendChild(s); setTimeout(()=>s.remove(),900); }
+function formatBio(raw){
+  const bioEl = $('#bio');
+  bioEl.innerHTML='';
+  // Séparer double nouvelles lignes comme paragraphes
+  const paras = raw.split(/\n\n+/).map(p=>p.trim()).filter(Boolean);
+  paras.forEach(p=>{
+    // Découper en phrases approximatives en conservant ponctuation . ! ? et guillemets/fragments
+    const sentences = p.match(/[^.!?\n]+[.!?…]?/g) || [p];
+    const wrap = el('p','bioPara');
+    sentences.map(s=>s.trim()).filter(Boolean).forEach(s=>{
+      const span = el('span','sentence',s);
+      wrap.append(span);
+    });
+    bioEl.append(wrap);
+  });
+}
+
+// === INTRO ===
+$('#modeSeg').addEventListener('click',e=>{ if(e.target.tagName!=='BUTTON') return; [...$('#modeSeg').children].forEach(b=>b.classList.remove('active')); e.target.classList.add('active'); state.mode=e.target.dataset.mode; });
+$('#diffSeg').addEventListener('click',e=>{ if(e.target.tagName!=='BUTTON') return; [...$('#diffSeg').children].forEach(b=>b.classList.remove('active')); e.target.classList.add('active'); state.diff=e.target.dataset.diff; });
+$('#optsSeg').addEventListener('click',e=>{ if(e.target.tagName!=='BUTTON') return; const b=e.target; const opt=b.dataset.opt; const on=b.getAttribute('aria-pressed')==='true'; b.setAttribute('aria-pressed', String(!on)); b.classList.toggle('active', !on); if(opt==='pendu') state.pendu=!on; if(opt==='facts') state.factsOn=!on; });
+$('#btnStart').addEventListener('click', startGame);
+
+function startGame(){
+  $('#screenIntro').style.display='none'; $('#screenGame').style.display='block';
+  const n = state.mode==='campagne' ? Math.min(RULES.campaignSize, GAME_DATA.fiches.length) : 1;
+  const idxs=[...Array(GAME_DATA.fiches.length).keys()].sort(()=>Math.random()-0.5).slice(0,n);
+  state.queue = idxs; state.index=0; state.totalScore=0;
+  loadFiche();
+}
+
+// === TIMER / DRAIN ===
+function startTimer(){ stopTimer(); state.startTime=performance.now(); state.ficheScore=state.ficheBase; $('#kFicheScore').textContent=Math.round(state.ficheScore); $('#prog').style.width='0%';
+  state.timerId=setInterval(()=>{
+    const t = Math.floor((performance.now()-state.startTime)/1000);
+    $('#kTime').textContent=`${pad(Math.floor(t/60))}:${pad(t%60)}`;
+    // Drain
+    state.ficheScore = Math.max(0, state.ficheBase - t*state.drainPerSec - penaltyAccum);
+    $('#kFicheScore').textContent=Math.round(state.ficheScore);
+    $('#prog').style.width = Math.min(100,(t/600)*100)+'%';
+    if(t>=600){ // 10 minutes écoulées
+      stopTimer(); finalizeFiche('timeout',600,0,0); feedback(false,'⏳ Temps écoulé — 0 point sur cette fiche'); setTimeout(nextFiche, 900);
+    }
+  },250);
+}
+function stopTimer(){ if(state.timerId){ clearInterval(state.timerId); state.timerId=null; }}
+
+// accumulateur de pénalités fixes (indices, erreurs, faits)
+let penaltyAccum = 0;
+function addPenalty(x){ penaltyAccum += x; flyLoss(x, $('#kFicheScore').closest('.row')); }
+
+function current(){ return GAME_DATA.fiches[state.queue[state.index]]; }
+
+function loadFiche(){
+  penaltyAccum = 0; state.tries=0; state.revealed=[false,false,false];
+  const f=current(); state.factsShown=!!state.factsOn;
+  // HUD
+  $('#kFiche').textContent=state.index+1; $('#kFicheMax').textContent=state.queue.length; $('#kTries').textContent=0; $('#kScore').textContent=Math.round(state.totalScore);
+  // profile
+  const m=$('#meta'); m.innerHTML=''; m.append(el('span','badge',f.profile.name)); m.append(el('span','badge',`${f.profile.age} ans`)); m.append(el('span','badge',f.profile.city)); m.append(el('span','badge',f.profile.job));
+  formatBio(f.profile.bio||'');
+  const facts=$('#facts'); facts.innerHTML=''; (f.profile.facts||[]).forEach(x=>facts.append(el('div','fact',x)));
+  facts.style.display = state.factsOn? 'grid':'none';
+  $('#penduInfo').style.display = state.pendu? 'inline':'none';
+  $('#hints').innerHTML=''; [1,2,3].forEach(i=>{ const d=el('div','hint locked'); d.id='hint'+i; d.textContent=`Indice ${i} verrouillé`; $('#hints').append(d); });
+  $('#guess').value='';
+  // controls
+  $('#btnHint1').onclick=()=>revealHint(0);
+  $('#btnHint2').onclick=()=>revealHint(1);
+  $('#btnHint3').onclick=()=>revealHint(2);
+  $('#btnSubmit').onclick=submitGuess;
+  $('#btnFacts').onclick=()=>{ if($('#facts').style.display!=='grid'){ addPenalty(RULES.factsCost); $('#facts').style.display='grid'; state.factsShown=true; } };
+  $('#btnAbandon').onclick=()=>{ stopTimer(); finalizeFiche('abandon', Math.floor((performance.now()-state.startTime)/1000), 0, 0); feedback(false,'Fiche abandonnée'); setTimeout(nextFiche,700); };
+  startTimer();
+}
+
+function revealHint(i){ if(state.revealed[i]) return; state.revealed[i]=true; const hints=current().passwords[state.diff].hints; const d=$('#hint'+(i+1)); d.classList.remove('locked'); d.textContent=hints[i]||'—'; addPenalty(RULES.hintCost[i]); }
+
+function submitGuess(){ const target=current().passwords[state.diff].value; const val=$('#guess').value; if(!val) return; if(val===target){
+  const t=Math.floor((performance.now()-state.startTime)/1000); stopTimer();
+  let score = Math.round(state.ficheScore);
+  const bonus=(t<30?100:(t<=60?50:0)); score+=bonus;
+  state.totalScore += Math.max(0,score); $('#kScore').textContent=Math.round(state.totalScore);
+  feedback(true, `✔ Correct (+${Math.max(0,score)} pts)`);
+  finalizeFiche('success', t, score, bonus);
+  setTimeout(nextFiche, 900);
+} else {
+  state.tries++; $('#kTries').textContent=state.tries; addPenalty(RULES.wrongCost);
+  let msg='✖ Incorrect'; if(state.pendu){ const n=penduCount(val, target); msg+=` — Pendu: ${n} caractères corrects`; }
+  feedback(false,msg);
+}}
+
+function penduCount(guess, target){
+  // compte commun multiset sensible à la casse, sans positions
+  const count=(s)=>{const m=new Map(); for(const ch of [...s]) m.set(ch,(m.get(ch)||0)+1); return m};
+  const a=count(guess), b=count(target); let total=0; for(const [ch,na] of a){ const nb=b.get(ch)||0; if(nb>0) total+= Math.min(na,nb); } return total;
+}
+
+function feedback(ok,msg){ const box=$('#cardAction'); const fb=$('#feedback'); fb.textContent=msg; if(ok){ box.classList.remove('shake'); box.classList.add('pulse'); setTimeout(()=>box.classList.remove('pulse'),1000);} else { box.classList.remove('pulse'); box.classList.add('shake'); setTimeout(()=>box.classList.remove('shake'),500);} }
+
+function nextFiche(){
+  state.index++; if(state.index>=state.queue.length){ endRun(); } else { loadFiche(); }
+}
+
+function endRun(){
+  const total=Math.round(state.totalScore);
+  const rows=state.runStats.map(r=>`<tr><td>${r.index+1}</td><td>${r.id}</td><td>${r.outcome==='success'?'<span style=\"color:var(--primary)\">OK</span>':(r.outcome==='abandon'?'<span style=\"color:var(--warn)\">ABANDON</span>':'⏳')}</td><td>${r.timeSec||'—'}</td><td>${r.tries}</td><td>${r.hintsUsed}</td><td>${r.facts?'Oui':'Non'}</td><td>${r.bonus}</td><td>${r.score}</td></tr>`).join('');
+  const successes=state.runStats.filter(r=>r.outcome==='success');
+  const avgTime=successes.length? Math.round(successes.reduce((a,b)=>a+b.timeSec,0)/successes.length)+'s':'—';
+  const attempts=successes.reduce((a,b)=>a+b.tries,0)+successes.length; const accuracy=attempts? Math.round((successes.length/attempts)*100)+'%':'—';
+  const totalHints=state.runStats.reduce((a,b)=>a+b.hintsUsed,0);
+  const statHTML=`<div class=\"endStats\"><div class=\"kpiBlock\"><div><strong>${total}</strong><span>Score total</span></div><div><strong>${avgTime}</strong><span>Temps moyen</span></div><div><strong>${accuracy}</strong><span>Précision</span></div><div><strong>${totalHints}</strong><span>Indices</span></div></div><div class=\"tableWrap\"><table class=\"summary\"><thead><tr><th>#</th><th>Fiche</th><th>Résultat</th><th>Temps</th><th>Essais</th><th>Indices</th><th>Facts</th><th>Bonus</th><th>Score</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  const awareness=`<div class=\"awareness\"><h3>⚠ Vous avez vu comme c’était facile ?</h3><p>Ces mots de passe ont été <strong>déduits à partir d’informations publiques</strong> (bio, traces, indices). Dans la vraie vie, réutiliser ce genre d’éléments rend un compte :</p><ul><li><b>Facile à deviner</b> pour un proche ou un curieux motivé.</li><li><b>Vulnérable aux attaques automatisées</b> (mots clés + dates + prénoms).</li></ul><p><b>Bonne pratique :</b> utiliser un gestionnaire de mots de passe qui génère et retient pour vous des chaînes robustes, différentes partout.</p><div class=\"pwExample\"><code>1&6*h04&UL#pIfgWv11^*aM8&</code></div><p>Un gestionnaire remplira automatiquement ce type de mot de passe sur vos sites. Moins d’exposition, moins de réutilisation, beaucoup plus de sécurité.</p><p style=\"font-size:11px;opacity:.65\">Astuce bonus : activez l’authentification à deux facteurs (2FA) sur vos services critiques.</p></div>`;
+  $('#screenGame').innerHTML=`<div class=\"panel endPanel\"><div class=\"row\" style=\"justify-content:space-between;align-items:center;margin-bottom:14px\"><div class=\"badge\">Fin de session – Password Hunter</div><div class=\"badge\">Score total <span class=\"score\">${total}</span></div></div>${awareness}${statHTML}<div class=\"row\" style=\"margin-top:24px;gap:10px\"><button class=\"btn primary\" id=\"btnRestart\">Rejouer mêmes réglages</button><button class=\"btn\" id=\"btnChange\">Changer réglages</button><button class=\"btn ghost\" id=\"btnHome\">Accueil</button></div></div>`;
+  $('#btnRestart')?.addEventListener('click', ()=>startGame());
+  $('#btnChange')?.addEventListener('click', ()=>location.reload());
+  $('#btnHome')?.addEventListener('click', ()=>location.reload());
+}
+
+function finalizeFiche(outcome,timeSec,score,bonus){
+  const fiche=current();
+  const hintsUsed=state.revealed.filter(Boolean).length;
+  state.runStats.push({index:state.runStats.length,id:fiche.id,diff:state.diff,outcome,timeSec,score:Math.max(0,Math.round(score)),tries:state.tries,hintsUsed,facts:state.factsShown,penalties:penaltyAccum,bonus});
+}
+</script>
+</body>
+</html>
