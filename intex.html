@@ -1159,7 +1159,7 @@ const state = {
 };
 
 // === RULES ===
-const RULES = { hintCost:[100,150,200], wrongCost:20, factsCost:50, bonusSpeed:(t)=> t<30?100:(t<=60?50:0), campaignSize:5 };
+const RULES = { hintCost:[100,150,200], wrongCost:5, factsCost:50, bonusSpeed:(t)=> t<30?100:(t<=60?50:0), campaignSize:5 };
 
 // === HELPERS ===
 const $ = s=>document.querySelector(s); const el=(t,c,txt)=>{const n=document.createElement(t); if(c) n.className=c; if(txt!=null) n.textContent=txt; return n}; const pad=n=>String(n).padStart(2,'0');
