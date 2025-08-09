@@ -1,6 +1,9 @@
+
 # Password Hunter
 
-![Password Hunter – écran d’accueil](screenshot/screen1.png)
+<p align="center">
+	<img src="screenshot/screen1.png" alt="Écran d’accueil Password Hunter" width="700">
+</p>
 
 **Password Hunter** est un jeu d’OSINT (Open Source Intelligence) pour sensibiliser à la faiblesse des mots de passe « devinables ». Le but : deviner le mot de passe d’un profil fictif à partir de ses traces publiques, indices et habitudes… comme le ferait un attaquant ou un collègue trop curieux.
 
@@ -35,7 +38,10 @@
 - Plus vous trouvez vite, plus le score est élevé
 - Un écran de fin récapitule vos stats et rappelle les bonnes pratiques
 
-![Exemple de fiche](screenshot/screen2.png)
+
+<p align="center">
+	<img src="screenshot/screen2.png" alt="Exemple de fiche" width="700">
+</p>
 
 ---
 
@@ -45,7 +51,10 @@
 - **Débrief** : l’écran de fin explique pourquoi il faut utiliser un gestionnaire de mots de passe et activer le 2FA
 - **Aucune donnée réelle** : tout est fictif, pas de collecte ni de stockage
 
-![Écran de fin et sensibilisation](screenshot/screen3.png)
+
+<p align="center">
+	<img src="screenshot/screen3.png" alt="Écran de fin et sensibilisation" width="700">
+</p>
 
 ---
 
